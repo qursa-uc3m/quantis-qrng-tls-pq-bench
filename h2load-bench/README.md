@@ -4,15 +4,6 @@ This repository contains the scripts we used for running and analyzing benchmark
 
 ## Building `oqs-demos/h2load`
 
-Get the Dockerfile with
-
-To obtain the Dockerfile and the accompanying `check_algorithms.sh` script (necessary for the build), use the following commands:
-
-```bash
-curl -L -o Dockerfile https://github.com/open-quantum-safe/oqs-demos/raw/0.9.0/h2load/Dockerfile
-curl -L -o check_algorithms.sh https://github.com/open-quantum-safe/oqs-demos/blob/0.9.0/h2load/check_algorithms.sh
-```
-
 Build the Docker image by running:
 
 ```bash

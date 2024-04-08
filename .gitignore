@@ -1,5 +1,3 @@
 quantis-qrng-nginx/dependencies/quantis_qrng_libraries/
 quantis-qrng-nginx/dependencies/qrng_openssl_provider/
-h2load-bench/Dockerfile
-h2load-bench/check_algorithms.sh
 *.*venv/
