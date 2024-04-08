@@ -10,25 +10,10 @@ Before using this repository, ensure you have the Quantis QRNG devices and/or dr
 
 ### Setting up the Quantis QRNG OpenSSL Provider
 
-First, clone the Quantis QRNG OpenSSL provider inside the `./dependencies/` folder:
+After cloning this repository, you have to initialize the submodule `quantis-qrng-openssl-integration` with the provider:
 
 ```bash
-cd dependencies
-git clone https://github.com/qursa-uc3m/quantis-qrng-openssl-integration.git
-cd quantis-qrng-openssl-integration
-git checkout tags/0.1.0
-cd ../..
-```
-
-Next, place the Quantis libraries into the ./dependencies/quantis_qrng_libraries folder. Make sure the Libs-Apps/ directory from the Quantis libraries is located within. You can download the libraries from [Quantis Software](https://www.idquantique.com/random-number-generation/products/quantis-software/).
-
-For instance, you might use the following commands:
-
-```bash
-wget -P /tmp https://documentsidq.s3.eu-central-1.amazonaws.com/Quantis_products/pcie-chip-20.2.4.zip
-unzip /tmp/pcie-chip-20.2.4.zip -d /tmp
-mkdir ./dependencies/quantis_qrng_libraries
-cp -r /tmp/pcie-chip-20.2.4-linux/* ./dependencies/quantis_qrng_libraries/
+git submodule update --init
 ```
 
 ### Building the Docker Image
@@ -42,18 +27,20 @@ docker build \
     --build-arg QUANTIS_LIB=YES \
     --build-arg DEVICE_NUMBER=0 \
     --build-arg XOR_RANDOM=ON \
+    --build-arg MEASURE_RNG=ON \
     --build-arg QRNG_DEBUG=ON \
     -t oqs-nginx-quantis .
 ```
 
-The build arguments are described below:
+where the arguments are as follows:
 
-- `QRNG_DEVICE`: The QRNG device type. Valid values are `USB` and `PCIE`. Default is USB.
+- `QRNG_DEVICE`: The QRNG device type. Default is USB.
 - `QRNG_DEBUG`: Enables or disables QRNG debugging. Default is ON.
 - `QUANTIS_QRNG`: Activates the Quantis QRNG. Default is true.
 - `QUANTIS_LIB`: Activates the Quantis library. Default is YES. If set to NO, `/dev/qrandom{DEVICE_NUMBER}` is used instead of the Quantis library.
 - `DEVICE_NUMBER`: The device number. Default is 0.
-- `XOR_RANDOM`: Enables or disables XORing the QRNG random bytes with `getrandom()`. Default is ON.
+- `XOR_RANDOM`: Enables or disables XORing the QRNG random bytes with getrandom(). Default is ON.
+- `MEASURE_RNG`: Registers the amount of random bytes requested to the provider in a `/random_numbers_shm` shared memory. Default is OFF.
 
 Note: The Docker image uses the nginx configuration specified in the `./nginx-conf/nginx.conf` file.
 

@@ -72,7 +72,7 @@ rm -r build
 mkdir build
 check_cmd
 cd build
-cmake -DCMAKE_CXX_STANDARD=14 ..
+cmake -DCMAKE_CXX_STANDARD=14 -DDISABLE_EASYQUANTIS=1 ..
 make
 check_cmd
 

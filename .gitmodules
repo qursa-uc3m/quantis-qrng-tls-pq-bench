@@ -1,0 +1,3 @@
+[submodule "quantis-qrng-nginx/dependencies/quantis-qrng-openssl-integration"]
+	path = quantis-qrng-nginx/dependencies/quantis-qrng-openssl-integration
+	url = https://github.com/qursa-uc3m/quantis-qrng-openssl-integration.git

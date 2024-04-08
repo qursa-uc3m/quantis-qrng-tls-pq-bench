@@ -1,0 +1,8 @@
+# Quantis PCI - module-based
+SUBSYSTEM=="qrandom", OWNER="root", GROUP="plugdev", MODE="0664"
+
+# Quantis PCI - chip-based
+KERNEL=="qrandom*", OWNER="root", GROUP="plugdev", MODE="0664"
+
+# Quantis USB
+SUBSYSTEM=="usb", ATTRS{idVendor}=="0aba", ATTRS{idProduct}=="0102", OWNER="root", GROUP="plugdev", MODE="0664"

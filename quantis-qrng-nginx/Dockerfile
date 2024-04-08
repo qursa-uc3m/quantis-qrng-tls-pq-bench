@@ -30,6 +30,7 @@ ARG QUANTIS_QRNG=true
 ARG QUANTIS_LIB=YES
 ARG DEVICE_NUMBER=0
 ARG XOR_RANDOM=ON
+ARG MEASURE_RNG=OFF
 
 FROM ubuntu:22.04 as intermediate
 
@@ -75,6 +76,7 @@ WORKDIR /opt/nginx-${NGINX_VERSION}
 RUN ./configure --prefix=${INSTALLDIR} \
                 --with-debug \
                 --with-http_ssl_module --with-openssl=/opt/openssl \
+                --with-http_v2_module \
                 --without-http_gzip_module && \
     make ${MAKE_DEFINES} && make install;
 
@@ -118,12 +120,14 @@ ARG QRNG_DEVICE
 ARG QUANTIS_LIB
 ARG DEVICE_NUMBER
 ARG XOR_RANDOM
+ARG ARG MEASURE_RNG
 ENV QUANTIS_QRNG=${QUANTIS_QRNG}
 ENV QRNG_DEBUG=${QRNG_DEBUG}
 ENV QRNG_DEVICE=${QRNG_DEVICE}
 ENV QUANTIS_LIB=${QUANTIS_LIB}
 ENV DEVICE_NUMBER=${DEVICE_NUMBER}
 ENV XOR_RANDOM=${XOR_RANDOM}
+ENV MEASURE_RNG=${MEASURE_RNG}
 ENV DEBIAN_FRONTEND noninteractive
 
 LABEL version="2"
@@ -141,12 +145,16 @@ WORKDIR ${INSTALLDIR}
 #! -----QUANTIS LIBRARIES installation-----
 #! QRNG dependencies:
 # QUANTIS LIBRARIES installation
-COPY dependencies/ /tmp/dependencies/
+COPY dependencies/pcie-chip-20.2.4-linux/Libs-Apps /tmp/dependencies/pcie-chip-20.2.4-linux/Libs-Apps
+COPY dependencies/pcie-chip-20.2.4-linux/License.txt /tmp/dependencies/pcie-chip-20.2.4-linux/License.txt
+COPY dependencies/quantis-qrng-openssl-integration /tmp/dependencies/quantis-qrng-openssl-integration
+COPY dependencies/install_quantis_libraries.sh /tmp/dependencies/install_quantis_libraries.sh
+COPY dependencies/read_shm /tmp/dependencies/read_shm
 
 RUN if [ "${QUANTIS_QRNG}" = "true" ]; then \
     apt-get install -y --no-install-recommends pciutils usbutils udev software-properties-common wget && \
     # Add your libraries to the Docker image \
-    cp -r /tmp/dependencies/quantis_qrng_libraries/ /opt/quantis && \
+    cp -r /tmp/dependencies/pcie-chip-20.2.4-linux/ /opt/quantis && \
     # Copy your installation script into the image \
     cp /tmp/dependencies/install_quantis_libraries.sh /usr/local/bin/install_quantis_libraries.sh && \
     # Set the permissions of the script to be executable \
@@ -163,7 +171,13 @@ RUN if [ "${QUANTIS_QRNG}" = "true" ]; then \
     cp -r /tmp/dependencies/quantis-qrng-openssl-integration/qrng_openssl_provider/ /opt/qrng_openssl_provider && \
     mkdir /opt/qrng_openssl_provider/build && \
     cd /opt/qrng_openssl_provider/build && \
-    cmake -DDEVICE_TYPE=${QRNG_DEVICE} -DQUANTIS_LIB=${QUANTIS_LIB} -DDEVICE_NUMBER=${DEVICE_NUMBER} -DDEBUG=${QRNG_DEBUG} -DOPENSSL_ROOT_DIR=${OSSLDIR} -DXOR_RANDOM=${XOR_RANDOM} .. && \
+    cmake -DDEVICE_TYPE=${QRNG_DEVICE} \
+        -DQUANTIS_LIB=${QUANTIS_LIB} \
+        -DDEVICE_NUMBER=${DEVICE_NUMBER} \
+        -DDEBUG=${QRNG_DEBUG} \
+        -DOPENSSL_ROOT_DIR=${OSSLDIR} \
+        -DXOR_RANDOM=${XOR_RANDOM} \
+        -DMEASURE_RNG=${MEASURE_RNG} .. && \
     make && \
     mkdir -p /opt/quantis/providers/ && \
     cp libcustom_qrng_provider.so /opt/quantis/providers/ && \
@@ -172,6 +186,14 @@ RUN if [ "${QUANTIS_QRNG}" = "true" ]; then \
     sed -i "/\[provider_sect\]/a customprovider = customprovider_sect" ${OSSLDIR}/ssl/openssl.cnf; \
 fi
 #! -----QRNG OPENSSL PROVIDER INSTALLATION-----
+
+#! -----QRNG OPENSSL PROVIDER INSTALLATION - MEASURE-----
+RUN if [ "${MEASURE_RNG}" = "ON" ]; then \
+    # Compile read_shm
+    gcc -o /tmp/dependencies/read_shm/read_shm /tmp/dependencies/read_shm/read_shm.c -lrt && \
+    mv /tmp/dependencies/read_shm/read_shm /usr/local/bin/; \
+fi
+#! -----QRNG OPENSSL PROVIDER INSTALLATION - MEASURE-----
 
 # forward request and error logs to docker log collector
 RUN ln -sf /dev/stdout ${INSTALLDIR}/logs/access.log && \
@@ -190,4 +212,3 @@ RUN groupadd -g 1000 oqs && useradd --uid 1000 -g oqs oqs && chown -R oqs:oqs ${
 USER oqs
 
 CMD ["nginx", "-c", "nginx-conf/nginx.conf", "-g", "daemon off;"]
-
