@@ -1,3 +1,4 @@
 quantis-qrng-nginx/dependencies/quantis_qrng_libraries/
 quantis-qrng-nginx/dependencies/qrng_openssl_provider/
 *.*venv/
+build/
