@@ -69,3 +69,87 @@ To stop the running container, execute:
 ```bash
 docker stop oqs-nginx-quantis
 ```
+
+## Registering the amount of random bytes requested
+
+Build the image with the `MEASURE_RNG` argument set to `ON`, for example:
+
+```bash
+docker build --no-cache --build-arg QUANTIS_QRNG=true \
+    --build-arg QRNG_DEVICE=USB \
+    --build-arg QUANTIS_LIB=YES \
+    --build-arg DEVICE_NUMBER=0 \
+    --build-arg XOR_RANDOM=ON  \
+    --build-arg QRNG_DEBUG=ON \
+    --build-arg MEASURE_RNG=ON \
+    -t oqs-nginx-quantis .
+```
+
+Then, with the container running, you can access the shared memory by running
+
+```bash
+docker exec -it oqs-nginx-quantis /bin/bash
+```
+
+and then
+
+```bash
+read_shm
+```
+
+If you want to clear the shared memory, which is `/random_numbers_shm` run
+
+```bash
+rm /dev/shm/random_numbers_shm
+```
+
+### Automated measurement retrieval and aggregation
+
+Create a Python virtual environment and install the requirements:
+
+```bash
+conda create -n measure_rand_bytes-venv python=3.10
+conda activate measure_rand_bytes-venv
+pip install --no-cache-dir -r ./measyre_rand_bytes/requirements.txt
+```
+
+We have a script that retrieve the measurements from inside the container and aggregate them. But there is no need to run it, later we will call a wrapper that also launches `h2load`. This is how the script for the server works:
+
+```bash
+./measure_container.sh -c 1 -n 1 -a kyber512 -v 2
+```
+
+where
+
+- `-c` is the number of clientes making requests
+- `-n` is the number of requests per client
+- `-a` is the algorithm used
+- `-v` is the http version used, valid values are 1_1 and 2
+
+Ensure that the `oqs-nginx-quantis` is up and running
+
+```bash
+docker build --no-cache --build-arg QUANTIS_QRNG=true     --build-arg QRNG_DEVICE=USB     --build-arg QUANTIS_LIB=NO     --build-arg DEVICE_NUMBER=0     --build-arg XOR_RANDOM=OFF      --build-arg QRNG_DEBUG=ON     --build-arg MEASURE_RNG=ON     -t oqs-nginx-quantis .
+docker run --privileged --detach --rm --env-file env.list --name oqs-nginx-quantis -p 4433:4433 oqs-nginx-quantis
+```
+
+Then, run the script to retrieve the measurements:
+
+```bash
+./measure_container.sh -c 1 -n 1 -a kyber512 -v 2
+```
+
+where
+
+- `-c` is the number of clientes making requests
+- `-n` is the number of requests per client
+- `-a` is the algorithm used
+- `-v` is the http version used, valid values are 1_1 and 2
+
+Now we need to build the `h2load` image as specified in the `h2load-bench` directory. After that, we can run the wrapper script that launches `h2load` and the script to retrieve the measurements:
+
+```bash
+./measurements_wrapper.sh -c 1 -n 1 -p <port> -v 2 -a kyber512
+```
+
+where the parameters are the same as before. If the `-a` parameter is not passed, all the algorithms will be used.
