@@ -19,3 +19,7 @@ For more detailed instructions and configuration options, please refer to the `R
 Scripts for conducting and analyzing benchmarks are located in the `h2load-bench` directory. These benchmarks utilize [oqs-demos/h2load](https://github.com/open-quantum-safe/oqs-demos/tree/0.9.0/h2load) from [Open Quantum Safe](https://openquantumsafe.org/). The results from the paper are provided in a compressed format within the respective directories as specified in the corresponding `README.md` files in the h2load-bench directory.
 
 For more detailed instructions see the `README.md` file in the `h2load-bench` directory.
+
+### rand_bytes_speed
+
+This directory contains the scripts and programs used to measure the rate of random bytes generation from different sources with different methods.
